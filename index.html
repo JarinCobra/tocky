@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kolo Štěstí - Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-effects">
+        <div class="glow-ball ball-1"></div>
+        <div class="glow-ball ball-2"></div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="header-controls">
+                <h2>Kolo Štěstí</h2>
+                <button id="muteBtn" class="icon-btn">🔊 Zvuk ZAP</button>
+            </div>
+            
+            <div class="input-group">
+                <input type="text" id="nameInput" placeholder="Zadej jméno (nebo více oddělených čárkou)...">
+                <button id="addBtn">Přidat</button>
+            </div>
+            
+            <div class="lists-container">
+                <div class="list-box">
+                    <h3>Aktivní</h3>
+                    <ul id="activeList"></ul>
+                </div>
+                <div class="list-box">
+                    <h3>Vylosovaní</h3>
+                    <ul id="removedList"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="wheel-wrapper">
+                <div class="pointer"></div>
+                <canvas id="wheel" width="400" height="400"></canvas>
+            </div>
+            <button id="spinBtn">ROZTOČIT KOLO</button>
+        </div>
+    </div>
+
+    <div id="winModal" class="modal">
+        <div class="modal-content">
+            <p class="modal-subtitle">Vítězem se stává</p>
+            <h2 id="winnerName">Jméno</h2>
+            <button id="closeModalBtn">Pokračovat</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
