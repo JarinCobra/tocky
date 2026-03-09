@@ -12,18 +12,71 @@ document.addEventListener('DOMContentLoaded', () => {
     const winnerNameDisplay = document.getElementById('winnerName');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const muteBtn = document.getElementById('muteBtn');
+    const clearRemovedBtn = document.getElementById('clearRemovedBtn'); // Nové tlačidlo
 
-    const winSound = new Audio('https://actions.google.com/sounds/v1/magic/magic_chime_sweep.ogg');
-
-    // TADY JE ZMĚNA: Pokud je paměť prázdná, vytvoří se úplně čisté kolo (prázdné pole [])
     let names = JSON.parse(localStorage.getItem('koloJmena')) || [];
     let removedNames = JSON.parse(localStorage.getItem('koloOdstranene')) || [];
-    
     let isMuted = localStorage.getItem('koloMuted') === 'true';
 
     let currentRotation = 0;
     let isSpinning = false;
     const colors = ["#ef4444", "#f59e0b", "#10b981", "#0ea5e9", "#8b5cf6", "#ec4899", "#14b8a6", "#f43f5e"];
+
+    function hratZvukVyhry() {
+        if (isMuted) return;
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioCtx = new AudioContext();
+            
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+            gain1.gain.setValueAtTime(0, audioCtx.currentTime);
+            gain1.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05); 
+            gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5); 
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            osc1.start(audioCtx.currentTime);
+            osc1.stop(audioCtx.currentTime + 0.5);
+
+            const osc2 = audioCtx.createOscillator();
+            const gain2 = audioCtx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.15); 
+            gain2.gain.setValueAtTime(0, audioCtx.currentTime + 0.15);
+            gain2.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.2);
+            gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+            osc2.start(audioCtx.currentTime + 0.15);
+            osc2.stop(audioCtx.currentTime + 0.8);
+        } catch (error) { console.log(error); }
+    }
+
+    function hratZvukPrdu() {
+        if (isMuted) return;
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioCtx = new AudioContext();
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sawtooth'; 
+            osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.2);
+            
+            gain.gain.setValueAtTime(1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.2);
+        } catch (e) { console.log(e); }
+    }
 
     function saveData() {
         localStorage.setItem('koloJmena', JSON.stringify(names));
@@ -38,6 +91,21 @@ document.addEventListener('DOMContentLoaded', () => {
         isMuted = !isMuted;
         localStorage.setItem('koloMuted', isMuted);
         updateMuteButton();
+    });
+
+    // --- NOVÁ FUNKCIA: Vymazanie histórie výhercov ---
+    clearRemovedBtn.addEventListener('click', () => {
+        // Kontrola, či vôbec je čo vymazať
+        if (removedNames.length > 0) {
+            // Bezpečnostná otázka pre užívateľa
+            if (confirm('Opravdu chcete vymazat celou historii výherců?')) {
+                removedNames = []; // Vyprázdnenie poľa
+                saveData(); // Uloženie zmeny do pamäte
+                updateLists(); // Prekreslenie zoznamu (zmiznú z obrazovky)
+            }
+        } else {
+            alert('Seznam výherců je už prázdný.');
+        }
     });
 
     updateMuteButton(); 
@@ -141,6 +209,34 @@ document.addEventListener('DOMContentLoaded', () => {
         currentRotation += randomSpins + extraDegrees;
 
         canvas.style.transform = `rotate(${currentRotation}deg)`;
+
+        let lastSliceIndex = -1;
+        function checkSlice() {
+            if (!isSpinning) return;
+
+            const style = window.getComputedStyle(canvas);
+            const matrix = style.getPropertyValue('transform');
+
+            if (matrix !== 'none') {
+                const values = matrix.split('(')[1].split(')')[0].split(',');
+                const a = parseFloat(values[0]);
+                const b = parseFloat(values[1]);
+                let angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+                if (angle < 0) angle += 360;
+
+                const sliceDeg = 360 / names.length;
+                const currentSliceIndex = Math.floor(((360 - angle) % 360) / sliceDeg) % names.length;
+
+                if (lastSliceIndex !== -1 && currentSliceIndex !== lastSliceIndex) {
+                    hratZvukPrdu(); 
+                }
+                lastSliceIndex = currentSliceIndex;
+            }
+
+            requestAnimationFrame(checkSlice);
+        }
+        
+        requestAnimationFrame(checkSlice);
     });
 
     canvas.addEventListener('transitionend', () => {
@@ -151,10 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const winningIndex = Math.floor((360 - actualDeg) / sliceDeg) % names.length;
         const winner = names[winningIndex];
 
-        if (!isMuted) {
-            winSound.currentTime = 0;
-            winSound.play();
-        }
+        hratZvukVyhry();
 
         winnerNameDisplay.textContent = winner;
         winModal.classList.add('show');
