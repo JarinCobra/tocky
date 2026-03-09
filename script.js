@@ -15,36 +15,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const winSound = new Audio('https://actions.google.com/sounds/v1/magic/magic_chime_sweep.ogg');
 
-    // NAČÍTÁNÍ Z PAMĚTI (Local Storage) nebo použití výchozích jmen
-    let names = JSON.parse(localStorage.getItem('koloJmena')) || ["Pepa", "Jana", "Karel", "Lucie", "Tomáš"];
+    // TADY JE ZMĚNA: Pokud je paměť prázdná, vytvoří se úplně čisté kolo (prázdné pole [])
+    let names = JSON.parse(localStorage.getItem('koloJmena')) || [];
     let removedNames = JSON.parse(localStorage.getItem('koloOdstranene')) || [];
     
-    // Stav zvuku (ukládáme si ho také do paměti)
     let isMuted = localStorage.getItem('koloMuted') === 'true';
 
     let currentRotation = 0;
     let isSpinning = false;
     const colors = ["#ef4444", "#f59e0b", "#10b981", "#0ea5e9", "#8b5cf6", "#ec4899", "#14b8a6", "#f43f5e"];
 
-    // Funkce pro uložení dat do prohlížeče
     function saveData() {
         localStorage.setItem('koloJmena', JSON.stringify(names));
         localStorage.setItem('koloOdstranene', JSON.stringify(removedNames));
     }
 
-    // Aktualizace textu na tlačítku zvuku
     function updateMuteButton() {
         muteBtn.textContent = isMuted ? '🔇 Zvuk VYP' : '🔊 Zvuk ZAP';
     }
 
-    // Přepínání zvuku po kliknutí
     muteBtn.addEventListener('click', () => {
         isMuted = !isMuted;
         localStorage.setItem('koloMuted', isMuted);
         updateMuteButton();
     });
 
-    updateMuteButton(); // Nastavíme správný text rovnou po načtení
+    updateMuteButton(); 
 
     function drawWheel() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -99,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteBtn.className = 'delete-btn';
             deleteBtn.onclick = () => {
                 names.splice(index, 1);
-                saveData(); // Uložíme po smazání
+                saveData(); 
                 updateLists();
                 drawWheel();
             };
@@ -118,19 +114,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Vylepšené přidávání (podpora čárek)
     function pridatPolicko() {
         const inputText = nameInput.value.trim();
         if (inputText && !isSpinning) {
-            // Rozdělí text podle čárek a vyčistí mezery. 
-            // Vytvoří se pole nových jmen, prázdná se ignorují.
             const novePolozky = inputText.split(',').map(item => item.trim()).filter(item => item !== "");
-            
-            // Přidá všechna nová jména do hlavního seznamu
             names.push(...novePolozky);
             
             nameInput.value = '';
-            saveData(); // Uložíme po přidání
+            saveData(); 
             updateLists();
             drawWheel();
         }
@@ -160,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const winningIndex = Math.floor((360 - actualDeg) / sliceDeg) % names.length;
         const winner = names[winningIndex];
 
-        // Zvuk se přehraje jen, když není Muted
         if (!isMuted) {
             winSound.currentTime = 0;
             winSound.play();
@@ -169,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         winnerNameDisplay.textContent = winner;
         winModal.classList.add('show');
 
-        // Spuštění epických konfet
         confetti({
             particleCount: 150,
             spread: 90,
@@ -180,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         names.splice(winningIndex, 1);
         removedNames.push(winner);
         
-        saveData(); // Uložíme po losování
+        saveData(); 
         
         currentRotation = actualDeg;
         canvas.style.transition = 'none';
